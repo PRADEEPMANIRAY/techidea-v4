@@ -1,0 +1,8 @@
+import Link from 'next/link';
+import {Breadcrumbs} from '@/components/ui/breadcrumbs';
+import {ApiDirectory} from '@/components/apis/api-directory';
+import {ApiPlayground} from '@/components/apis/api-playground';
+import {LocationDemoLoader} from '@/components/apis/location-demo-loader';
+import {pageMetadata} from '@/lib/seo/metadata';
+export const metadata=pageMetadata('Free API directory — location and sample data','Explore five documented REST APIs for countries, administrative regions, Indian localities and fictional users or products, with a live same-origin playground.','/apis');
+export default function ApisPage(){return <div className="page-width page-section"><Breadcrumbs items={[{name:'Home',href:'/'},{name:'Free APIs',href:'/apis'}]}/><header className="dev-hero"><p className="eyebrow">TECHIDEA / DEVELOPERS / V1</p><h1>Free Public REST APIs<br/><span>Directory &amp; Playground</span></h1><p>Location reference and fictional sample data, with contracts you can inspect and requests you can run.</p><nav className="dev-actions" aria-label="API navigation"><Link className="button button-dark" href="/apis/docs">Read the documentation</Link><Link className="button button-light" href="#playground">Try the playground</Link><Link className="text-link" href="#location-demo">Location demo →</Link></nav></header><p className="dev-notice"><strong>Implemented; launch pending.</strong> These five handlers are implemented. Public deployment and production security are not verified. Live requests depend on this site's gateway configuration and may return 503. No client API key is required.</p><ApiDirectory/><ApiPlayground/><LocationDemoLoader/></div>;}

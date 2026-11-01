@@ -1,0 +1,8 @@
+# Include this rendered file inside nginx's http {} block. TLS/domain configuration
+# stays in the existing site server; include the rendered server snippet there.
+limit_req_zone $binary_remote_addr zone=techidea_api_per_ip:10m rate=__RATE__r/m;
+limit_req_zone $server_name zone=techidea_api_total:1m rate=__GLOBAL_RATE__r/s;
+limit_conn_zone $binary_remote_addr zone=techidea_api_connections:10m;
+map $http_origin $techidea_api_cors {
+__CORS_MAP__
+}

@@ -1,0 +1,508 @@
+{
+  "countries": {
+    "request": "/api/v1/countries?search=India",
+    "status": 200,
+    "body": {
+      "success": true,
+      "data": [
+        {
+          "name": "India",
+          "code": "IN",
+          "alpha3": "IND",
+          "currencyCode": "INR",
+          "callingCode": "91"
+        },
+        {
+          "name": "British Indian Ocean Territory",
+          "code": "IO",
+          "alpha3": "IOT",
+          "currencyCode": "USD",
+          "callingCode": "246"
+        }
+      ],
+      "meta": {
+        "dataset": {
+          "source": "Countries States Cities Database — Darshan Gada and contributors",
+          "license": "ODbL-1.0",
+          "revision": "a5078ba91302953cf17ff39c683344e09072c2f8",
+          "manifest": "/datasets/v1/manifest.json",
+          "licenseUrl": "/datasets/v1/LICENSE.txt"
+        }
+      }
+    },
+    "error": {
+      "request": "/api/v1/countries?unknown=value",
+      "status": 400,
+      "body": {
+        "success": false,
+        "error": {
+          "code": "INVALID_PARAMETER",
+          "message": "Unknown, repeated or invalid request parameter."
+        }
+      }
+    }
+  },
+  "states": {
+    "request": "/api/v1/states?country=IN",
+    "status": 200,
+    "body": {
+      "success": true,
+      "data": [
+        {
+          "id": "csc-state-4023",
+          "countryCode": "IN",
+          "name": "Andaman and Nicobar Islands",
+          "code": "AN",
+          "type": "union territory",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4017",
+          "countryCode": "IN",
+          "name": "Andhra Pradesh",
+          "code": "AP",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4024",
+          "countryCode": "IN",
+          "name": "Arunachal Pradesh",
+          "code": "AR",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4027",
+          "countryCode": "IN",
+          "name": "Assam",
+          "code": "AS",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4037",
+          "countryCode": "IN",
+          "name": "Bihar",
+          "code": "BR",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4031",
+          "countryCode": "IN",
+          "name": "Chandigarh",
+          "code": "CH",
+          "type": "union territory",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4040",
+          "countryCode": "IN",
+          "name": "Chhattisgarh",
+          "code": "CT",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4033",
+          "countryCode": "IN",
+          "name": "Dadra and Nagar Haveli and Daman and Diu",
+          "code": "DH",
+          "type": "union territory",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4021",
+          "countryCode": "IN",
+          "name": "Delhi",
+          "code": "DL",
+          "type": "union territory",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4009",
+          "countryCode": "IN",
+          "name": "Goa",
+          "code": "GA",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4030",
+          "countryCode": "IN",
+          "name": "Gujarat",
+          "code": "GJ",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4007",
+          "countryCode": "IN",
+          "name": "Haryana",
+          "code": "HR",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4020",
+          "countryCode": "IN",
+          "name": "Himachal Pradesh",
+          "code": "HP",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4029",
+          "countryCode": "IN",
+          "name": "Jammu and Kashmir",
+          "code": "JK",
+          "type": "union territory",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4025",
+          "countryCode": "IN",
+          "name": "Jharkhand",
+          "code": "JH",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4026",
+          "countryCode": "IN",
+          "name": "Karnataka",
+          "code": "KA",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4028",
+          "countryCode": "IN",
+          "name": "Kerala",
+          "code": "KL",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4852",
+          "countryCode": "IN",
+          "name": "Ladakh",
+          "code": "LA",
+          "type": "union territory",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4019",
+          "countryCode": "IN",
+          "name": "Lakshadweep",
+          "code": "LD",
+          "type": "union territory",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4039",
+          "countryCode": "IN",
+          "name": "Madhya Pradesh",
+          "code": "MP",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4008",
+          "countryCode": "IN",
+          "name": "Maharashtra",
+          "code": "MH",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4010",
+          "countryCode": "IN",
+          "name": "Manipur",
+          "code": "MN",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4006",
+          "countryCode": "IN",
+          "name": "Meghalaya",
+          "code": "ML",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4036",
+          "countryCode": "IN",
+          "name": "Mizoram",
+          "code": "MZ",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4018",
+          "countryCode": "IN",
+          "name": "Nagaland",
+          "code": "NL",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4013",
+          "countryCode": "IN",
+          "name": "Odisha",
+          "code": "OR",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4011",
+          "countryCode": "IN",
+          "name": "Puducherry",
+          "code": "PY",
+          "type": "union territory",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4015",
+          "countryCode": "IN",
+          "name": "Punjab",
+          "code": "PB",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4014",
+          "countryCode": "IN",
+          "name": "Rajasthan",
+          "code": "RJ",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4034",
+          "countryCode": "IN",
+          "name": "Sikkim",
+          "code": "SK",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4035",
+          "countryCode": "IN",
+          "name": "Tamil Nadu",
+          "code": "TN",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4012",
+          "countryCode": "IN",
+          "name": "Telangana",
+          "code": "TG",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4038",
+          "countryCode": "IN",
+          "name": "Tripura",
+          "code": "TR",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4022",
+          "countryCode": "IN",
+          "name": "Uttar Pradesh",
+          "code": "UP",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4016",
+          "countryCode": "IN",
+          "name": "Uttarakhand",
+          "code": "UK",
+          "type": "state",
+          "level": "1"
+        },
+        {
+          "id": "csc-state-4853",
+          "countryCode": "IN",
+          "name": "West Bengal",
+          "code": "WB",
+          "type": "state",
+          "level": "1"
+        }
+      ],
+      "meta": {
+        "dataset": {
+          "source": "Countries States Cities Database — Darshan Gada and contributors",
+          "license": "ODbL-1.0",
+          "revision": "a5078ba91302953cf17ff39c683344e09072c2f8",
+          "manifest": "/datasets/v1/manifest.json",
+          "licenseUrl": "/datasets/v1/LICENSE.txt"
+        },
+        "coverage": "source_subdivisions",
+        "notice": "Source administrative levels vary. An empty result does not establish that a country has no subdivisions."
+      }
+    },
+    "error": {
+      "request": "/api/v1/states?country=ZZ",
+      "status": 400,
+      "body": {
+        "success": false,
+        "error": {
+          "code": "INVALID_PARAMETER",
+          "message": "country must be a supported ISO alpha-2 code."
+        }
+      }
+    }
+  },
+  "cities": {
+    "request": "/api/v1/cities?country=IN&state=WB&search=Kolkata&page=1&limit=2",
+    "status": 200,
+    "body": {
+      "success": true,
+      "data": [
+        {
+          "id": "csc-city-142001",
+          "countryCode": "IN",
+          "stateCode": "WB",
+          "name": "Kolkata"
+        }
+      ],
+      "pagination": {
+        "page": 1,
+        "limit": 2,
+        "total": 1,
+        "totalPages": 1
+      },
+      "meta": {
+        "dataset": {
+          "source": "Countries States Cities Database — Darshan Gada and contributors",
+          "license": "ODbL-1.0",
+          "revision": "a5078ba91302953cf17ff39c683344e09072c2f8",
+          "manifest": "/datasets/v1/manifest.json",
+          "licenseUrl": "/datasets/v1/LICENSE.txt"
+        },
+        "coverage": {
+          "status": "partial",
+          "includedCountries": [
+            "IN"
+          ],
+          "notice": "Only source localities assigned to Indian states are included. Coverage is incomplete, including within India; some records describe districts. Empty results do not imply no cities exist."
+        }
+      }
+    },
+    "error": {
+      "request": "/api/v1/cities?country=IN&state=ZZ",
+      "status": 400,
+      "body": {
+        "success": false,
+        "error": {
+          "code": "INVALID_PARAMETER",
+          "message": "state must match a subdivision code returned for this country."
+        }
+      }
+    }
+  },
+  "users": {
+    "request": "/api/v1/sample/users?seed=demo&page=1&limit=2",
+    "status": 200,
+    "body": {
+      "success": true,
+      "data": [
+        {
+          "id": 1,
+          "name": "Demo User 001",
+          "email": "demo-user-1@example.com",
+          "country": "US",
+          "role": "editor",
+          "status": "active"
+        },
+        {
+          "id": 2,
+          "name": "Demo User 002",
+          "email": "demo-user-2@example.com",
+          "country": "JP",
+          "role": "editor",
+          "status": "active"
+        }
+      ],
+      "pagination": {
+        "page": 1,
+        "limit": 2,
+        "total": 200,
+        "totalPages": 100
+      },
+      "meta": {
+        "fictional": true,
+        "seed": "demo",
+        "notice": "Synthetic demonstration data only. Not real people, customers, products or offers."
+      }
+    },
+    "error": {
+      "request": "/api/v1/sample/users?limit=101",
+      "status": 400,
+      "body": {
+        "success": false,
+        "error": {
+          "code": "INVALID_PARAMETER",
+          "message": "limit must be an integer from 1 to 100."
+        }
+      }
+    }
+  },
+  "products": {
+    "request": "/api/v1/sample/products?seed=demo&category=home&page=1&limit=2",
+    "status": 200,
+    "body": {
+      "success": true,
+      "data": [
+        {
+          "id": 3,
+          "name": "Demo Storage Basket 003",
+          "category": "home",
+          "price": 17.81,
+          "currency": "USD",
+          "stockQuantity": 123,
+          "status": "available"
+        },
+        {
+          "id": 8,
+          "name": "Demo Storage Basket 008",
+          "category": "home",
+          "price": 160.75,
+          "currency": "USD",
+          "stockQuantity": 2,
+          "status": "available"
+        }
+      ],
+      "pagination": {
+        "page": 1,
+        "limit": 2,
+        "total": 40,
+        "totalPages": 20
+      },
+      "meta": {
+        "fictional": true,
+        "seed": "demo",
+        "notice": "Synthetic demonstration data only. Not real people, customers, products or offers."
+      }
+    },
+    "error": {
+      "request": "/api/v1/sample/products?category=invalid",
+      "status": 400,
+      "body": {
+        "success": false,
+        "error": {
+          "code": "INVALID_PARAMETER",
+          "message": "Unsupported category. Use electronics, stationery, home, outdoors or apparel."
+        }
+      }
+    }
+  }
+}

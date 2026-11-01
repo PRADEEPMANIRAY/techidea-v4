@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+const origin=process.env.TEST_ORIGIN??'http://127.0.0.1:3104';
+const token=process.env.API_PROXY_SECRET;
+if(!/^[a-f0-9]{64}$/.test(token??''))throw new Error('Set the matching test-only API_PROXY_SECRET in the local server and test environment.');
+const headers={'x-techidea-proxy-token':token};
+const cases=[['/api/v1/countries',200],['/api/v1/countries?search=India',200],['/api/v1/states?country=IN',200],['/api/v1/cities?country=IN&state=WB&search=kolkata',200],['/api/v1/cities?country=US&state=CA',200],['/api/v1/sample/users?seed=demo&page=2&limit=10',200],['/api/v1/sample/products?category=home&seed=demo',200],['/api/v1/states',400],['/api/v1/states?country=ZZ',400],['/api/v1/cities?country=IN&state=BAD',400],['/api/v1/sample/users?limit=101',400],['/api/v1/sample/users?seed=a&seed=b',400]];
+for(const [path,status] of cases){const response=await fetch(origin+path,{headers});assert.equal(response.status,status,path);assert.equal(response.headers.get('x-content-type-options'),'nosniff');assert.equal(response.headers.get('x-robots-tag'),'noindex, nofollow');assert.equal(response.headers.get('access-control-allow-origin'),'*');const body=await response.json();assert.equal(body.success,status===200);if(status!==200)assert.equal(body.error.code,'INVALID_PARAMETER');else assert.ok(Array.isArray(body.data));}
+const countries=await (await fetch(origin+'/api/v1/countries',{headers})).json();assert.equal(countries.data.length,249);
+const cities=await (await fetch(origin+'/api/v1/cities?country=IN&state=WB&search=kolkata',{headers})).json();assert.ok(cities.data.some(c=>c.name==='Kolkata'));assert.equal(cities.meta.coverage.status,'partial');
+const direct=await fetch(origin+'/api/v1/countries');assert.equal(direct.status,503);assert.equal((await direct.json()).error.code,'SERVICE_UNAVAILABLE');
+const forged=await fetch(origin+'/api/v1/countries',{headers:{'x-techidea-proxy-token':'b'.repeat(64),'x-forwarded-for':'127.0.0.1'}});assert.equal(forged.status,503);
+const preflight=await fetch(origin+'/api/v1/countries',{method:'OPTIONS',headers:{...headers,origin:'https://consumer.example','access-control-request-method':'GET'}});assert.equal(preflight.status,204);assert.equal(preflight.headers.get('access-control-allow-origin'),'*');
+for(const method of ['POST','PUT','PATCH','DELETE']){const response=await fetch(origin+'/api/v1/countries',{method,headers});assert.equal(response.status,405);assert.equal((await response.json()).error.code,'METHOD_NOT_ALLOWED');}
+const head=await fetch(origin+'/api/v1/countries',{method:'HEAD',headers});assert.equal(head.status,200);assert.equal(await head.text(),'');
+const sampleUrl=origin+'/api/v1/sample/products?seed=repeat';assert.deepEqual(await (await fetch(sampleUrl,{headers})).json(),await (await fetch(sampleUrl,{headers})).json());
+for(const path of ['/datasets/v1/countries.json','/datasets/v1/states.json','/datasets/v1/cities-IN.json','/datasets/v1/manifest.json','/datasets/v1/LICENSE.txt']){const response=await fetch(origin+path);assert.equal(response.status,200);assert.equal(response.headers.get('x-robots-tag'),'noindex, nofollow');assert.equal(response.headers.get('x-content-type-options'),'nosniff');}
+console.log('PASS: five production Route Handlers, validation, pagination/filtering, seeded data, method handling, CORS, gateway rejection and licensed dataset downloads. Nginx enforcement requires separate VPS validation.');

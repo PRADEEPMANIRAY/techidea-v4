@@ -1,0 +1,36 @@
+{
+  "name": "techidea-v4",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test --test-reporter=spec tests/converters.test.mjs tests/construction.test.mjs tests/financial.test.mjs tests/utilities.test.mjs tests/api.test.mjs tests/api-docs.test.mjs tests/india.test.mjs tests/pakistan.test.mjs tests/nepal.test.mjs tests/bhutan.test.mjs tests/quality.test.mjs tests/clipboard.test.mjs",
+    "test:site": "node --experimental-strip-types scripts/check-site.mjs",
+    "test:api": "node --experimental-strip-types scripts/check-api.mjs",
+    "test:api-performance": "node --experimental-strip-types scripts/check-api-performance.mjs",
+    "generate:api-examples": "node --experimental-strip-types scripts/generate-api-examples.mjs"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "next": "16.4.3",
+    "qrcode-generator": "2.0.4",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@xmldom/xmldom": "0.9.12",
+    "jsqr": "1.4.0",
+    "postcss": "8.5.32",
+    "tailwindcss": "4.3.3",
+    "typescript": "7.0.2"
+  }
+}

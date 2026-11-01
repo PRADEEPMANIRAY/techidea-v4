@@ -1,0 +1,5 @@
+import { Brand } from "./brand";
+import Link from "next/link";
+export function Footer() {
+  return <footer className="site-footer"><div className="page-width"><div className="footer-top"><div><Brand /><p>Free Online Tools, Calculators &amp; Public APIs</p><p className="footer-description">Less friction in your day.<br />More room for what matters.</p><span className="badge">Independent Utility Platform</span></div><nav aria-label="Explore"><h2>Explore</h2><Link href="/tools">All tools</Link><Link href="/calculators">Calculators</Link><Link href="/#categories">Tool categories</Link></nav><nav aria-label="Developers"><h2>Developers</h2><Link href="/apis">Free APIs</Link><Link href="/apis/docs">Documentation</Link><Link href="/apis#playground">API playground</Link></nav><nav aria-label="TechIdea"><h2>TechIdea</h2><Link href="/about">About</Link><Link href="/contact">Contact</Link><Link href="/privacy-policy">Privacy policy</Link><Link href="/terms">Terms</Link><Link href="/disclaimer">Disclaimer</Link></nav></div><div className="footer-bottom"><p>© {new Date().getUTCFullYear()} TechIdea</p><p>Thoughtfully simple. Useful by design.</p></div></div></footer>;
+}

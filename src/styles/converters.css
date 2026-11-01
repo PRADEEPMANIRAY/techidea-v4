@@ -1,0 +1,49 @@
+.tool-introduction { max-width: 880px; margin: 0 0 30px; color: var(--muted); line-height: 1.9; font-size: 15px; }
+.converter-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 28px; }
+.converter-heading h2 { font-size: 25px; }
+.converter-fields { max-width: 850px; }
+.converter-input-row { display: flex; gap: 10px; }
+.converter-input-row input { min-width: 0; flex: 1; font-size: 20px; }
+.sign-button { font-size: 22px; padding: 8px 17px; }
+.converter-help { color: var(--muted); font-size: 12px; line-height: 1.8; }
+.converter-unit-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 16px; margin-top: 24px; align-items: end; }
+.converter .field select { min-width: 0; font-size: 16px; }
+.swap-button { gap: 8px; }
+.swap-button > span:first-child { font-size: 22px; line-height: 1; }
+#swap-help { margin-top: 10px; }
+.precision-field { max-width: 180px; margin-top: 22px; }
+.converter-result { background: #f0f7ed; border: 1px solid #cbdcc7; border-radius: 12px; padding: 24px; margin-top: 28px; }
+.converter-result > label { font-size: 12px; font-weight: 650; color: #375b42; }
+.result-number { display: block; width: 100%; min-width: 0; background: transparent; border: 0; border-radius: 4px; color: #174d3c; font-size: clamp(24px, 3.5vw, 36px); font-weight: 650; letter-spacing: -1px; padding: 8px 0; text-overflow: ellipsis; }
+.result-unit { font-size: 14px; font-weight: 600; margin-bottom: 14px; }
+.copy-row { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 18px; }
+.copy-row p { font-size: 12px; line-height: 1.7; max-width: 560px; overflow-wrap: anywhere; }
+.converter-result.has-error { border-color: #e6c3bd; background: #fff7f5; }
+#conversion-error { color: #9c3025; font-size: 14px; line-height: 1.7; margin-bottom: 10px; }
+.converter-formula { padding-top: 26px; }
+.converter-formula h3 { font-size: 16px; font-weight: 650; }
+.formula-expression { font-family: ui-monospace, Consolas, monospace; font-size: 16px; color: #285641; margin: 12px 0; overflow-wrap: anywhere; line-height: 1.8; }
+.converter-method > p { max-width: 900px; font-size: 15px; color: var(--muted); line-height: 1.9; margin-top: 18px; }
+.conversion-table { overflow-x: auto; margin-block: 24px; border: 1px solid var(--line); border-radius: 10px; }
+.conversion-table table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+.conversion-table caption { padding: 15px; text-align: left; background: #f2f6f0; font-size: 13px; font-weight: 600; }
+.conversion-table th, .conversion-table td { border-top: 1px solid var(--line); padding: 12px 16px; overflow-wrap: anywhere; }
+.conversion-table thead th { font-weight: 650; color: var(--green); }
+.conversion-table tbody th { font-weight: 500; }
+.temperature-formulas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 0; list-style: none; margin-top: 24px; }
+.temperature-formulas li { background: #f2f6f0; padding: 16px; border-radius: 8px; font-family: ui-monospace, Consolas, monospace; font-size: 14px; overflow-wrap: anywhere; }
+.converter-notes { padding-left: 22px; margin-top: 24px; list-style: disc; color: var(--muted); font-size: 14px; line-height: 1.9; }
+.converter-method .converter-help, .converter-method .converter-source { font-size: 12px; }
+.converter-source a { text-decoration: underline; text-underline-offset: 3px; color: var(--green); }
+@media (max-width: 820px) {
+  .converter-unit-row { grid-template-columns: 1fr; gap: 12px; }
+  .swap-button { justify-self: start; }
+  .temperature-formulas { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .interactive-area:has(.converter) { padding: 18px; }
+  .converter-result { padding: 18px; }
+  .converter-heading h2 { font-size: 22px; }
+  .conversion-table table { font-size: 12px; }
+  .conversion-table th, .conversion-table td { padding: 10px; }
+}

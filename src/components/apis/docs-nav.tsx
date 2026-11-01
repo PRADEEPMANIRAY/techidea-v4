@@ -1,0 +1,3 @@
+import Link from 'next/link';
+import {apis} from '@/data/apis/registry';
+export function DocsNav({active}:{active?:string}){return <aside className="dev-sidebar"><details open><summary>Documentation navigation</summary><nav aria-label="API documentation"><Link href="/apis/docs" aria-current={active?'false':'page'}>Overview & access</Link>{apis.map(api=><Link key={api.id} href={'/apis/docs/'+api.id} aria-current={active===api.id?'page':undefined}>{api.name}</Link>)}<Link href="/apis#location-demo">Location selector demo</Link><Link href="/apis#playground">API playground</Link></nav></details></aside>;}

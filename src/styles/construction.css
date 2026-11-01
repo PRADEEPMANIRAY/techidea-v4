@@ -1,0 +1,39 @@
+.construction-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; }
+.construction-heading h2 { font-size: 25px; }
+.construction-heading h3 { font-size: 21px; font-weight: 650; }
+.construction-help { font-size: 12px; color: var(--muted); line-height: 1.8; }
+.construction-input-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px; margin-top: 28px; }
+.construction-field { min-width: 0; align-self: start; }
+.construction-field > label { line-height: 1.6; }
+.construction-calculator .field select { min-width: 0; font-size: 16px; }
+.measurement-input { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 8px; }
+.measurement-input input { min-width: 0; font-size: 16px; }
+.optional-label { color: var(--muted); font-weight: 400; }
+.construction-error { color: #9c3025; font-size: 13px; line-height: 1.7; }
+.construction-field input[aria-invalid="true"] { border-color: #b6493c; background: #fff8f6; }
+.reset-construction { margin-top: 24px; }
+.construction-results { margin-top: 30px; padding: 24px; border: 1px solid #cbdcc7; background: #f3f8ef; border-radius: 12px; }
+.construction-result-list { margin: 0 0 20px; }
+.construction-result-list > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; border-top: 1px solid #d8e5d2; padding-block: 13px; }
+.construction-result-list dt { margin: 0; font-size: 13px; font-weight: 500; line-height: 1.7; }
+.construction-result-list dd { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; overflow-wrap: anywhere; min-width: 0; }
+.construction-result-list strong { color: #174d3c; font-size: 17px; font-weight: 650; min-width: 0; }
+.construction-result-list dd > span { font-size: 12px; color: #4d6251; }
+.construction-copy-status { font-size: 12px; line-height: 1.8; margin-top: 12px; }
+.construction-results textarea { width: 100%; border: 1px solid #adc6ad; border-radius: 8px; padding: 12px; font-size: 13px; margin-top: 8px; background: white; }
+.construction-method > h3 { font-size: 18px; font-weight: 600; margin-top: 24px; }
+.construction-formulas { list-style: none; padding: 0; display: grid; gap: 10px; margin-top: 16px; }
+.construction-formulas li { background: #f3f7f0; padding: 14px 18px; border-radius: 8px; font-family: ui-monospace, Consolas, monospace; font-size: 13px; line-height: 1.9; overflow-wrap: anywhere; }
+.construction-notes { list-style: disc; padding-left: 22px; font-size: 14px; line-height: 1.9; color: var(--muted); margin-top: 16px; }
+.construction-method > p { font-size: 12px; line-height: 1.9; color: var(--muted); margin-top: 20px; }
+@media (max-width: 820px) {
+  .construction-input-grid { grid-template-columns: 1fr; gap: 20px; }
+}
+@media (max-width: 480px) {
+  .interactive-area:has(.construction-calculator) { padding: 18px; }
+  .construction-heading h2 { font-size: 22px; }
+  .measurement-input { grid-template-columns: 1fr; }
+  .construction-results { padding: 18px; }
+  .construction-result-list > div { grid-template-columns: 1fr; gap: 5px; }
+  .construction-results .button { width: 100%; }
+}
