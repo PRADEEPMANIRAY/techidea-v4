@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { calculateConstruction, constructionDefaults, constructionSummary, constructionUnits, type ConstructionDefinition } from "@/lib/calculators/construction";
+import { calculateConstruction, constructionDefaults, constructionSummary, constructionUnits, plywoodPresets, isConstructionFieldActive, type ConstructionDefinition } from "@/lib/calculators/construction";
 
 export function ConstructionCalculator({ definition, title }: { definition: ConstructionDefinition; title: string }) {
   const [state, setState] = useState(() => constructionDefaults(definition));
@@ -30,22 +30,42 @@ export function ConstructionCalculator({ definition, title }: { definition: Cons
       }
     }
   }
+  function printResults() {
+    if (!result.ok) return;
+    if (typeof window !== "undefined") window.print();
+  }
 
   return <div className="construction-calculator">
     <div className="construction-heading"><h2>Calculate your quantities</h2><span className="badge badge-live">Runs in your browser</span></div>
     <p className="construction-help">Results update as you edit. Use decimal points without commas. Costs use the same currency as your entered price.</p>
     <form ref={form} noValidate onSubmit={(event) => event.preventDefault()} aria-label={`${title} inputs`}>
-      <div className="construction-input-grid">{definition.fields.map((field) => {
+      <div className="construction-input-grid">{definition.fields.filter((field) => isConstructionFieldActive(definition, state, field.id)).toSorted((a, b) => Number(["shape", "sheetPreset", "estimateMode"].includes(b.id)) - Number(["shape", "sheetPreset", "estimateMode"].includes(a.id))).map((field) => {
         const inputId = `construction-${field.id}`;
         const description = [field.help && `${inputId}-help`, errors[field.id] && `${inputId}-error`].filter(Boolean).join(" ") || undefined;
         return <div className="field construction-field" key={field.id}>
-          <label htmlFor={inputId}>{field.label}{field.optional && <span className="optional-label"> (optional)</span>}</label>
+          <label htmlFor={inputId}>{field.label}{field.optional && !(definition.id === "concrete-calculator" && field.unitKind === "length") && <span className="optional-label"> (optional)</span>}</label>
           <div className={field.unitKind ? "measurement-input" : undefined}>
-            <input id={inputId} name={field.id} type="text" inputMode={field.integer ? "numeric" : "decimal"} autoComplete="off" maxLength={64}
-              value={state.values[field.id]} aria-required={!field.optional} aria-invalid={Boolean(errors[field.id])} aria-describedby={description}
-              onChange={(event) => { setState({ ...state, values: { ...state.values, [field.id]: event.target.value } }); clearCopy(); }} />
+            {field.options ? <select id={inputId} name={field.id} value={state.values[field.id]} aria-required={!field.optional || (definition.id === "concrete-calculator" && field.unitKind === "length")} aria-invalid={Boolean(errors[field.id])} aria-describedby={description}
+              onChange={(event) => {
+                const nextValue = event.target.value;
+                if (definition.id === "plywood-calculator" && field.id === "sheetPreset" && nextValue !== "custom") {
+                  const preset = plywoodPresets[nextValue];
+                  setState({
+                    ...state,
+                    values: { ...state.values, sheetPreset: nextValue, length: preset?.length ?? state.values.length, width: preset?.width ?? state.values.width },
+                    units: { ...state.units, length: preset?.unit ?? state.units.length, width: preset?.unit ?? state.units.width },
+                  });
+                } else {
+                  setState({ ...state, values: { ...state.values, [field.id]: nextValue } });
+                }
+                clearCopy();
+              }}>
+              {field.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select> : <input id={inputId} name={field.id} type="text" inputMode={field.integer ? "numeric" : "decimal"} autoComplete="off" maxLength={64}
+              value={state.values[field.id]} aria-required={!field.optional || (definition.id === "concrete-calculator" && field.unitKind === "length")} aria-invalid={Boolean(errors[field.id])} aria-describedby={description}
+              onChange={(event) => { setState({ ...state, values: { ...state.values, [field.id]: event.target.value, ...(definition.id === "plywood-calculator" && ["length", "width"].includes(field.id) ? { sheetPreset: "custom" } : {}) } }); clearCopy(); }} />}
             {field.unitKind && <select aria-label={`${field.label} unit`} value={state.units[field.id]} onChange={(event) => {
-              setState({ ...state, units: { ...state.units, [field.id]: event.target.value } }); clearCopy();
+              setState({ ...state, values: { ...state.values, ...(definition.id === "plywood-calculator" && ["length", "width"].includes(field.id) ? { sheetPreset: "custom" } : {}) }, units: { ...state.units, [field.id]: event.target.value } }); clearCopy();
             }}>{constructionUnits(field.unitKind).map((unit) => <option key={unit.id} value={unit.id}>{unit.label}</option>)}</select>}
           </div>
           {field.help && <p id={`${inputId}-help`} className="construction-help">{field.help}</p>}
@@ -56,11 +76,13 @@ export function ConstructionCalculator({ definition, title }: { definition: Cons
         setState(constructionDefaults(definition)); clearCopy(); form.current?.querySelector("input")?.focus();
       }}>Reset defaults</button>
     </form>
+    <div className="construction-print-inputs"><h2>{title}</h2><p>Material estimate — confirm measurements and supplier yields before ordering.</p><ul>{definition.fields.filter((field) => isConstructionFieldActive(definition, state, field.id)).map((field) => <li key={field.id}>{field.label}: {field.options?.find((option) => option.value === state.values[field.id])?.label ?? (state.values[field.id] || "Not entered")} {state.units[field.id] ?? ""}</li>)}</ul></div>
     <section className="construction-results" aria-labelledby="construction-results-title">
-      <div className="construction-heading"><h3 id="construction-results-title">Your estimate</h3><button type="button" className="button button-dark" onClick={copyResults} disabled={!result.ok}>Copy results</button></div>
+      <div className="construction-heading"><h3 id="construction-results-title">Your estimate</h3><div className="construction-actions"><button type="button" className="button button-dark" onClick={copyResults} disabled={!result.ok}>Copy results</button><button type="button" className="button button-light" onClick={printResults} disabled={!result.ok}>Print results</button></div></div>
       <p role="status" aria-live="polite" aria-atomic="true" className={result.ok ? "sr-only" : "construction-error"}>{result.ok ? `Estimate updated. ${lastResult?.label}: ${lastResult?.value} ${lastResult?.unit}.` : errors._form || "Check the highlighted inputs to calculate an estimate."}</p>
+      {definition.id === "plywood-calculator" && state.values.estimateMode === "area" && <p className="construction-help">Area-based sheet estimate only. It does not plan cuts, joints, grain direction or offcut reuse. Check your layout before ordering.</p>}
       {result.ok && <dl className="construction-result-list">{result.rows.map((row) => <div key={row.id} data-result={row.id}><dt>{row.label}</dt><dd><strong>{row.value}</strong><span>{row.unit}</span></dd></div>)}</dl>}
-      <p className="construction-help">Display values are rounded; calculations and costs use unrounded quantities. Tile and box counts always round up. A “&lt;” result is positive but smaller than the displayed decimal precision.</p>
+      <p className="construction-help">Display values are rounded; calculations and costs use unrounded quantities. Tile, box, bag and purchasing sheet counts always round up. A “&lt;” result is positive but smaller than the displayed decimal precision.</p>
       <p className="construction-copy-status" role="status" aria-live="polite">{copyStatus}</p>
       {manualCopy && <div className="field"><label htmlFor="construction-copy">Results for manual copying</label><textarea ref={copyArea} id="construction-copy" readOnly rows={8} value={summary} onFocus={(event) => event.currentTarget.select()} /><button type="button" className="button button-light" onClick={() => { copyArea.current?.focus(); copyArea.current?.select(); }}>Select results</button></div>}
     </section>

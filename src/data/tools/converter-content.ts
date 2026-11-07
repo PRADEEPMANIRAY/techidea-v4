@@ -67,7 +67,7 @@ export const converterContent: Record<string, ConverterContent> = {
     faqs: [
       ["Why are area conversion factors squared compared to length units?", "Area measures two-dimensional surface space, so linear conversion factors must be multiplied by themselves. Because 1 foot equals 0.3048 meters, 1 square foot equals 0.3048 × 0.3048 = 0.09290304 square meters. Multiplying by the linear factor directly is a common mistake."],
       ["How much land is in one international acre?", "One international acre contains exactly 43,560 international square feet, which equals approximately 4,046.8564 square meters or 0.404686 hectares. There are 640 acres in one international square mile."],
-      ["Does this converter support regional land units like Bigha or Ropani?", "Because traditional land units like Bigha vary substantially by state and country, they are excluded from this standard international converter to avoid ambiguity. For South Asian regional systems, please use our dedicated Nepal Land Area Converter or Multi-Unit Land Area Converter."],
+      ["Does this converter support regional land units like Bigha or Ropani?", "No. Use the Nepal Land Area Converter for the supported Ropani–Aana–Paisa–Daam system. The Multi-Unit Land Area Converter compares international units only; neither it nor this converter supports Bigha."],
     ],
   },
   "volume-converter": {

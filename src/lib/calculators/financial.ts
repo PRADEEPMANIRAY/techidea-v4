@@ -3,9 +3,9 @@ export type FinancialField = { id: string; label: string; defaultValue: string; 
 export type FinancialExample = { title: string; input: string; values: Record<string, string>; resultIds: readonly string[]; explanation: string };
 export type FinancialDefinition = { id: FinancialId; fields: readonly FinancialField[]; intro: string; formulas: readonly string[]; notes: readonly string[]; disclaimer: string; examples: readonly [FinancialExample, FinancialExample, FinancialExample]; faqs?: readonly [string, string][] };
 export type FinancialRow = { id: string; label: string; value: number; format: "money" | "number" | "percent" };
-export type AmortizationRow = { month: number; openingCents: number; paymentCents: number; principalCents: number; interestCents: number; closingCents: number };
+export type AmortizationRow = { month: number; openingCents: number; paymentCents: number; principalCents: number; interestCents: number; closingCents: number; extraCents?: number };
 export type ProjectionRow = { year: number; monthlyCents: number; yearInvestedCents: number; investedCents: number; valueCents: number; gainsCents: number };
-export type FinancialResult = { ok: false; errors: Record<string, string> } | { ok: true; currency: string; rows: FinancialRow[]; values: Record<string, number>; note: string; formula: string; amortization?: AmortizationRow[]; projection?: ProjectionRow[] };
+export type FinancialResult = { ok: false; errors: Record<string, string> } | { ok: true; currency: string; rows: FinancialRow[]; values: Record<string, number>; note: string; formula: string; amortization?: AmortizationRow[]; revisedAmortization?: AmortizationRow[]; projection?: ProjectionRow[]; sipComparison?: {year:number;fixedValue:number;fixedInvested:number;steppedValue:number;realValue:number}[] };
 
 export const currencies = [{ value: "INR", label: "INR — Indian rupee" }, { value: "USD", label: "USD — US dollar" }, { value: "EUR", label: "EUR — Euro" }, { value: "GBP", label: "GBP — Pound sterling" }] as const;
 export function financialDefaults(definition: FinancialDefinition): Record<string, string> { return Object.fromEntries(definition.fields.map((field) => [field.id, field.defaultValue])); }
@@ -74,6 +74,8 @@ export function calculateFinancial(definition: FinancialDefinition, input: Recor
   const rows: FinancialRow[] = [];
   function row(id: string, label: string, value: number, format: FinancialRow["format"] = "money") { rows.push({ id, label, value, format }); }
   function money(id: string, label: string, value: bigint) { row(id, label, currencyValue(value)); }
+  let sipComparison: {year:number;fixedValue:number;fixedInvested:number;steppedValue:number;realValue:number}[] | undefined;
+  let revisedAmortization: AmortizationRow[] | undefined;
   let note = "", formula = "", amortization: AmortizationRow[] | undefined, projection: ProjectionRow[] | undefined;
 
   if (definition.id === "emi-calculator") {
@@ -99,14 +101,46 @@ export function calculateFinancial(definition: FinancialDefinition, input: Recor
     money("interest", "Total interest", totalInterest); money("repayment", "Total repayment", totalPayment);
     row("finalPayment", "Final payment", amortization.at(-1)!.paymentCents / 100);
     row("payments", "Number of payments", amortization.length, "number");
+    const lump = cents("lumpSum"), extra = cents("monthlyExtra"), start = n("extraStart");
+    if ((lump > Z || extra > Z) && start > months) return fail("extraStart", "Choose a starting month within the original tenure.");
+    if (input.strategy === "recast" && extra > Z) return fail("monthlyExtra", "Set monthly extras to zero when recalculating EMI after a lump sum.");
+    if (input.strategy === "recast" && lump > Z && start >= months) return fail("extraStart", "A recalculation needs at least one month remaining after the lump sum.");
+    revisedAmortization = [];
+    balance = principal;
+    let revisedEmi = emi, revisedInterest = Z, extraPaid = Z, recastEmi = emi;
+    for (let month = 1; month <= months && balance > Z; month++) {
+      const interest = round(mul(rat(balance), rate)), due = balance + interest;
+      const regular = month === months || revisedEmi > due ? due : revisedEmi;
+      if (regular < interest) return fail("_form", "The recalculated payment does not cover interest. Use a shorter tenure.");
+      const remaining = due - regular;
+      const requestedExtra = (month === start ? lump : Z) + (month >= start ? extra : Z);
+      const paidExtra = requestedExtra > remaining ? remaining : requestedExtra;
+      const payment = regular + paidExtra, closing = due - payment;
+      revisedAmortization.push({month,openingCents:Number(balance),paymentCents:Number(payment),principalCents:Number(payment-interest),interestCents:Number(interest),closingCents:Number(closing),extraCents:Number(paidExtra)});
+      revisedInterest += interest; extraPaid += paidExtra; balance = closing;
+      if (input.strategy === "recast" && month === start && lump > Z && month < months) {
+        const remainingMonths = months-month;
+        revisedEmi = balance === Z ? Z : centsFromNumber(monthlyRate === 0 ? currencyValue(balance)/remainingMonths : currencyValue(balance)*monthlyRate/-Math.expm1(-remainingMonths*Math.log1p(monthlyRate)));
+        if (balance > Z && revisedEmi === Z) return fail("lumpSum", "The recalculated payment is below 0.01. Reduce the lump sum or use tenure reduction.");
+        recastEmi = revisedEmi;
+      }
+    }
+    money("revisedEmi", "EMI after lump-sum recalculation (or original EMI)", recastEmi);
+    money("revisedInterest", "Revised total interest", revisedInterest);
+    row("revisedPayments", "Revised payoff duration (months)", revisedAmortization.length, "number");
+    money("interestSaved", "Estimated interest saved", totalInterest-revisedInterest);
+    row("monthsSaved", "Months saved", amortization.length-revisedAmortization.length, "number");
+    money("extraPaid", "Total extra payments actually applied", extraPaid);
     formula = monthlyRate === 0 ? "EMI = principal ÷ number of months (zero interest)" : "EMI = P × r × (1 + r)ⁿ ÷ ((1 + r)ⁿ − 1), with r = annual rate ÷ 1200";
-    note = "EMI and each month's interest are rounded to two decimals. The last payment clears the remaining balance; very small loans can finish early. Totals are the sum of this schedule, excluding fees and taxes.";
+    note = "EMI and each month's interest are rounded to two decimals. The last payment clears the remaining balance; very small loans can finish early. Totals are the sum of this schedule, excluding fees, taxes and prepayment penalties. Extra payments follow the regular payment in the selected month; recalculation starts the next month. Lender rules may differ, so savings are estimates.";
   } else if (definition.id === "sip-calculator") {
     const annual = n("return"), years = n("years");
     if (annual <= -100) return fail("return", "The return is too close to −100% for numeric precision. Enter a rate farther above −100%.");
     const monthlyRate = Math.expm1(Math.log1p(annual / 100) / 12);
     let monthly = cents("monthly"), invested = Z, value = 0;
-    projection = [];
+    projection = []; sipComparison = [];
+    const fixedMonthly = currencyValue(monthly), inflation = n("inflation");
+    let fixedValue = 0;
     const step = add(dec("1"), div(v("stepUp"), dec("100")));
     for (let year = 1; year <= years; year++) {
       if (year > 1) monthly = round(mul(rat(monthly), step));
@@ -114,9 +148,11 @@ export function calculateFinancial(definition: FinancialDefinition, input: Recor
       for (let month = 0; month < 12; month++) {
         value = value * (1 + monthlyRate) + currencyValue(monthly);
         invested += monthly;
+        fixedValue = fixedValue * (1 + monthlyRate) + fixedMonthly;
       }
       if (!Number.isFinite(value) || value > 1e13 || invested > MAX_CENTS) return fail("_form", "The projection exceeds 10 trillion currency units. Reduce the investment, return, duration or step-up.");
       const endValue = centsFromNumber(value);
+      sipComparison.push({year,fixedValue:currencyValue(centsFromNumber(fixedValue)),fixedInvested:currencyValue(cents("monthly")*BigInt(year*12)),steppedValue:currencyValue(endValue),realValue:currencyValue(centsFromNumber(value/(1+inflation/100)**year))});
       projection.push({ year, monthlyCents: Number(monthly), yearInvestedCents: Number(monthly * BigInt(12)), investedCents: Number(invested), valueCents: Number(endValue), gainsCents: Number(endValue - invested) });
     }
     const final = projection.at(-1)!;
@@ -124,8 +160,13 @@ export function calculateFinancial(definition: FinancialDefinition, input: Recor
     row("value", "Estimated investment value", final.valueCents / 100);
     row("gains", "Estimated gains / losses", final.gainsCents / 100);
     row("monthlyReturn", "Equivalent monthly return", monthlyRate * 100, "percent");
+    const comparison = sipComparison.at(-1)!;
+    row("fixedValue", "Fixed SIP estimated future value", comparison.fixedValue);
+    row("fixedInvested", "Fixed SIP contributions", comparison.fixedInvested);
+    row("fixedGains", "Fixed SIP estimated growth", currencyValue(centsFromNumber(fixedValue)-cents("monthly")*BigInt(years*12)));
+    row("realValue", "Step-up value in today’s purchasing power", comparison.realValue);
     formula = "r = (1 + annual return / 100)^(1/12) − 1; Vₘ = Vₘ₋₁ × (1 + r) + contributionₘ";
-    note = "Contributions are made at each month-end. Step-up starts in month 13 and repeats annually, rounding each new monthly contribution to two decimals. Growth is not rounded between months. Fees, taxes and inflation are excluded. Returns are estimates, not guarantees.";
+    note = "Contributions are made at each month-end. Step-up starts in month 13 and repeats annually, rounding each new monthly contribution to two decimals. Growth is not rounded between months. Today’s purchasing power = nominal future value ÷ (1 + inflation/100)^years. Inflation does not reduce the displayed portfolio balance. Fees and taxes are excluded. Returns are assumptions, not forecasts or guarantees.";
   } else if (definition.id === "gst-calculator") {
     const amount = cents("amount"), rate = div(v("rate"), dec("100"));
     const taxable = input.taxMode === "inclusive" ? round(div(rat(amount), add(dec("1"), rate))) : amount;
@@ -166,7 +207,7 @@ export function calculateFinancial(definition: FinancialDefinition, input: Recor
     row("result", mode === "of" ? "Calculated value" : mode === "ratio" ? "Percentage of whole" : mode === "difference" ? "Percentage difference" : mode === "increase" ? "Percentage increase" : "Percentage decrease", number(result), mode === "of" ? "number" : "percent");
     note = mode === "difference" ? "Difference uses the mean of absolute magnitudes, supports signed inputs and ranges from 0% to 200%. It is symmetric, not a directional change." : mode === "increase" || mode === "decrease" ? "Relative change uses the magnitude of the original value as its denominator. A negative increase means a decrease; a negative decrease means an increase. Zero original values are undefined." : "Signed values are supported. For X as a percentage of Y, a zero denominator is undefined, including 0 ÷ 0.";
   }
-  return { ok: true, currency, rows, values: Object.fromEntries(rows.map((item) => [item.id, item.value])), note, formula, amortization, projection };
+  return { ok: true, currency, rows, values: Object.fromEntries(rows.map((item) => [item.id, item.value])), note, formula, amortization, revisedAmortization, projection, sipComparison };
 }
 
 export function formatFinancial(value: number, format: FinancialRow["format"], currency = "INR"): string {
@@ -180,4 +221,9 @@ export function emiCsv(schedule: readonly AmortizationRow[], currency: string): 
   if (!currencies.some((item) => item.value === currency)) throw new Error("Unsupported currency");
   const header = ["Month", ...["Opening balance", "Payment", "Principal", "Interest", "Closing balance"].map((label) => `${label} (${currency})`)];
   return [header.join(","), ...schedule.map((row) => [row.month, ...[row.openingCents, row.paymentCents, row.principalCents, row.interestCents, row.closingCents].map((cents) => (cents / 100).toFixed(2))].join(","))].join("\r\n") + "\r\n";
+}
+
+export function revisedEmiCsv(schedule: readonly AmortizationRow[], currency: string): string {
+  if (!currencies.some(item=>item.value===currency)) throw new Error("Unsupported currency");
+  return [["Month",...['Opening balance','Regular payment','Extra payment','Total payment','Principal','Interest','Closing balance'].map(label=>`${label} (${currency})`)].join(','),...schedule.map(r=>[r.month,...[r.openingCents,r.paymentCents-(r.extraCents??0),r.extraCents??0,r.paymentCents,r.principalCents,r.interestCents,r.closingCents].map(v=>(v/100).toFixed(2))].join(','))].join('\r\n')+'\r\n';
 }

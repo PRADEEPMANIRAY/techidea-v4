@@ -4,7 +4,7 @@ import {DOMParser} from '@xmldom/xmldom';
 import jsQR from 'jsqr';
 import {formatJson,csvToJson,xmlToJson,checkXml,validateCsvFile,decodeCsv,TEXT_LIMIT} from '../src/lib/utilities/text.ts';
 import {createQr,qrPixels} from '../src/lib/utilities/qr.ts';
-import {inspectImage,validateDimensions,compressionSummary,MAX_IMAGE_BYTES} from '../src/lib/utilities/image.ts';
+import {inspectImage,validateDimensions,compressionSummary,MAX_IMAGE_BYTES,validateImageBatch,resizedDimensions,compressImage} from '../src/lib/utilities/image.ts';
 import {utilities} from '../src/data/tools/utilities.ts';
 import {getPublishedTools} from '../src/data/tools/registry.ts';
 const parse=text=>new DOMParser({onError:(level,message)=>{throw new Error(message);}}).parseFromString(text,'application/xml');
@@ -60,3 +60,62 @@ test('Published CSV examples match conversion',()=>{for(const ex of utilities.fi
 test('XML valid element named parsererror is allowed',()=>assert.equal(xml('<parsererror>ordinary data</parsererror>').name,'parsererror'));
 test('CSV repeated long headers cannot amplify output unboundedly',()=>assert.throws(()=>csvToJson('x'.repeat(10000)+'\n'+'v\n'.repeat(1000)),/8 MiB/));
 test('JSON pretty output bounded before excessive allocation',()=>assert.throws(()=>formatJson('['.repeat(127)+'0,'.repeat(40000)+'0'+']'.repeat(127)),/8 MiB/));
+
+test('QR branding retains independently decodable colored modules',()=>{
+ for(const text of ['https://techidea.online','Hello 世界 नमस्ते']){
+  const qr=createQr(text,'M',512,'text',{foreground:'#123456',background:'#ffffff'});
+  assert.equal(jsQR(qrPixels(qr),qr.size,qr.size)?.data,text);
+  assert.equal(qr.warnings.length,0);
+ }
+});
+test('QR logo forces H and bounds overlay without accepting SVG injection',()=>{
+ const logo='data:image/png;base64,iVBORw0KGgo=';
+ const qr=createQr('https://techidea.online','L',512,'url',{logoDataUrl:logo,logoPercent:10});
+ assert.equal(qr.effectiveLevel,'H');assert.ok(qr.warnings.length>0);
+ assert.equal(jsQR(qrPixels(qr),qr.size,qr.size)?.data,'https://techidea.online');
+ for(const brand of [{foreground:'red" onload="x'},{logoDataUrl:'data:image/svg+xml,<svg/>'},{logoPercent:16},{logoPercent:NaN}])assert.throws(()=>createQr('test','M',320,'text',brand));
+});
+test('QR low contrast and inverted colors warn rather than claiming scan reliability',()=>{
+ assert.ok(createQr('test','M',320,'text',{foreground:'#eeeeee'}).warnings.length);
+ assert.ok(createQr('test','M',320,'text',{foreground:'#ffffff',background:'#000000'}).warnings.length);
+});
+
+test('Image batch validates count, total and individual byte limits',()=>{
+ assert.doesNotThrow(()=>validateImageBatch([{size:1024},{size:2048}]));
+ for(const files of [[],Array(11).fill({size:1}),Array(6).fill({size:10*1024*1024}),[{size:0}],[{size:MAX_IMAGE_BYTES+1}]])assert.throws(()=>validateImageBatch(files));
+});
+test('Image resize preserves aspect ratio without enlargement',()=>{
+ assert.deepEqual(resizedDimensions(1600,900,800,800),{width:800,height:450});
+ assert.deepEqual(resizedDimensions(900,1600,800,800),{width:450,height:800});
+ assert.deepEqual(resizedDimensions(100,50,800,800),{width:100,height:50});
+ for(const bound of [0,-1,1.5,8193,NaN])assert.throws(()=>resizedDimensions(100,50,bound,800));
+});
+test('Image cancellation before work does not allocate or decode',async()=>{
+ const controller=new AbortController();controller.abort();
+ await assert.rejects(compressImage(new File(['bad'],'bad.png',{type:'image/png'}),'image/png',.8,{signal:controller.signal}),{name:'AbortError'});
+});
+
+for (const input of ['{bad', '<root><child></root>', '<a/><b/>', '', '<r>&unknown;</r>']) {
+ test('XML refuses invalid document '+JSON.stringify(input),()=>assert.throws(()=>xml(input)));
+}
+for (const [input, diagnostic] of [
+ ['{bad','<html xmlns="http://www.w3.org/1999/xhtml"><body><parsererror/></body></html>'],
+ ['<root><child></root>','<root><parsererror xmlns="http://www.w3.org/1999/xhtml"/></root>'],
+]) {
+ test('Chromium diagnostic DOM must not become JSON: '+input,()=>assert.throws(()=>xmlToJson(input,()=>parse(diagnostic)),/Malformed XML/));
+}
+for (const ns of ['', 'http://www.w3.org/1999/xhtml','http://www.mozilla.org/newlayout/xml/parsererror.xml']) {
+ test('XML preserves an authored parsererror element in namespace '+ns,()=>{
+   const r=xml('<parsererror xmlns="'+ns+'" id="p">before<parsererror_/>after</parsererror>');
+   assert.equal(r.name,'parsererror');assert.equal(r.attributes.find(a=>a.name==='id').value,'p');
+   assert.deepEqual(r.children.map(x=>typeof x==='string'?x:x.name),['before','parsererror_','after']);
+ });
+}
+test('XML keeps prefixed names, parsererror text and repeated children in order',()=>{
+ const r=xml('<r xmlns:p="urn:test">parsererror<p:parsererror/><p:parsererror/></r>');
+ assert.deepEqual(r.children.map(x=>typeof x==='string'?x:[x.name,x.namespace]),['parsererror',['p:parsererror','urn:test'],['p:parsererror','urn:test']]);
+});
+test('XML validation does not rename a namespace prefix named parsererror',()=>{
+ const r=xml('<r xmlns:parsererror="urn:example"><parsererror:other/><parsererror/></r>');
+ assert.deepEqual(r.children.map(x=>x.name),['parsererror:other','parsererror']);
+});

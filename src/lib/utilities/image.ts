@@ -26,15 +26,29 @@ export function inspectImage(bytes:Uint8Array,mime:string){
  validateDimensions(width,height);return {type,width,height};
 }
 export function compressionSummary(original:number,output:number){if(original<=0||output<=0)throw new Error('Invalid file sizes.');const reduction=(original-output)/original*100;return {reduction,smaller:output<original,label:output<original?`${reduction.toFixed(1)}% smaller`:output===original?'Same size — no reduction':`${(-reduction).toFixed(1)}% larger — no size reduction`};}
-export async function compressImage(file:File,format:ImageFormat,quality:number){
+export const MAX_BATCH_FILES=10, MAX_BATCH_BYTES=50*1024*1024;
+export function validateImageBatch(files:readonly {size:number}[]){
+ if(files.length<1||files.length>MAX_BATCH_FILES)throw new Error('Choose 1–10 images per batch.');
+ if(files.some(f=>!Number.isSafeInteger(f.size)||f.size<1||f.size>MAX_IMAGE_BYTES))throw new Error('Each image must be nonempty and at most 10 MiB.');
+ if(files.reduce((sum,f)=>sum+f.size,0)>MAX_BATCH_BYTES)throw new Error('The batch exceeds 50 MiB.');
+}
+export function resizedDimensions(width:number,height:number,maxWidth=MAX_SIDE,maxHeight=MAX_SIDE){
+ validateDimensions(width,height);
+ if(!Number.isInteger(maxWidth)||!Number.isInteger(maxHeight)||maxWidth<1||maxHeight<1||maxWidth>MAX_SIDE||maxHeight>MAX_SIDE)throw new Error('Maximum dimensions must be whole numbers from 1 to 8192.');
+ const scale=Math.min(1,maxWidth/width,maxHeight/height);
+ return {width:Math.max(1,Math.round(width*scale)),height:Math.max(1,Math.round(height*scale))};
+}
+export async function compressImage(file:File,format:ImageFormat,quality:number,options:{maxWidth?:number;maxHeight?:number;signal?:AbortSignal}={}){
+ options.signal?.throwIfAborted();
  if(!['image/jpeg','image/png','image/webp'].includes(format)||!Number.isFinite(quality)||quality<0.1||quality>1)throw new Error('Choose a supported format and quality from 10–100%.');
  if(file.size>MAX_IMAGE_BYTES)throw new Error('The image exceeds 10 MiB.');
  inspectImage(new Uint8Array(await file.arrayBuffer()),file.type);
+ options.signal?.throwIfAborted();
  let source:ImageBitmap|HTMLImageElement;let url:string|undefined;
  try{if(typeof createImageBitmap==='function')source=await createImageBitmap(file);else{url=URL.createObjectURL(file);const image=new Image();image.src=url;await new Promise<void>((resolve,reject)=>{image.onload=()=>resolve();image.onerror=()=>reject(new Error('The browser could not decode this image.'));});source=image;}}
  catch{if(url)URL.revokeObjectURL(url);throw new Error('The browser could not decode this image. Try a valid JPEG, PNG or WebP.');}
- const width=source instanceof HTMLImageElement?source.naturalWidth:source.width,height=source instanceof HTMLImageElement?source.naturalHeight:source.height;
+ const sourceWidth=source instanceof HTMLImageElement?source.naturalWidth:source.width,sourceHeight=source instanceof HTMLImageElement?source.naturalHeight:source.height;
  const canvas=document.createElement('canvas');
- try{validateDimensions(width,height);canvas.width=width;canvas.height=height;const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Canvas processing is unavailable in this browser.');if(format==='image/jpeg'){ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);}ctx.drawImage(source,0,0);const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Image encoding failed. Try a smaller image.')),format,quality));if(blob.type!==format)throw new Error('This browser does not support the selected output format. Choose PNG or JPEG.');return {blob,width,height,...compressionSummary(file.size,blob.size)};}
+ try{options.signal?.throwIfAborted();const {width,height}=resizedDimensions(sourceWidth,sourceHeight,options.maxWidth,options.maxHeight);canvas.width=width;canvas.height=height;const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Canvas processing is unavailable in this browser.');if(format==='image/jpeg'){ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);}ctx.drawImage(source,0,0,width,height);const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Image encoding failed. Try a smaller image.')),format,quality));options.signal?.throwIfAborted();if(blob.type!==format)throw new Error('This browser does not support the selected output format. Choose PNG or JPEG.');return {blob,width,height,...compressionSummary(file.size,blob.size)};}
  finally{canvas.width=0;canvas.height=0;if('close'in source)source.close();if(url)URL.revokeObjectURL(url);}
 }

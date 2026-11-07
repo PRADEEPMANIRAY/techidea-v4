@@ -37,3 +37,30 @@
   .construction-result-list > div { grid-template-columns: 1fr; gap: 5px; }
   .construction-results .button { width: 100%; }
 }
+
+.construction-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.construction-print-inputs { display: none; }
+.construction-field:has([name="shape"]), .construction-field:has([name="sheetPreset"]) { grid-column: 1 / -1; order: -1; }
+@media print {
+  body:has(.construction-calculator) header, body:has(.construction-calculator) footer,
+  body:has(.construction-calculator) .skip-link, .tool-page:has(.construction-calculator) > :not(.interactive-area),
+  .construction-calculator > :not(.construction-print-inputs):not(.construction-results),
+  .construction-actions, .construction-copy-status, .construction-results > .field { display: none !important; }
+  .construction-print-inputs { display: block; }
+  .construction-print-inputs ul { columns: 2; font-size: 10pt; }
+  .tool-page:has(.construction-calculator), .interactive-area:has(.construction-calculator) { margin: 0; padding: 0; width: 100%; max-width: none; border: 0; box-shadow: none; }
+  .construction-results { background: white; padding: 12px; margin-top: 12px; }
+  .construction-result-list > div { break-inside: avoid; padding-block: 5px; grid-template-columns: 1fr 1fr; }
+  .construction-result-list strong { font-size: 11pt; }
+}
+
+.construction-method > .construction-guide-paragraph { font-size: 15px; line-height: 1.85; color: var(--ink); }
+.construction-field:has([name="estimateMode"]) { grid-column: 1 / -1; order: -1; }
+.construction-page-nav { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-bottom: 24px; font-size: 14px; }
+.construction-page-nav a { color: var(--green); text-decoration: underline; text-underline-offset: 3px; padding-block: 8px; }
+.construction-calculator fieldset { min-width: 0; margin: 22px 0; padding: 16px; border: 1px solid #cbdcc7; border-radius: 10px; }
+.construction-calculator legend { font-weight: 650; padding: 0 6px; }
+.construction-calculator fieldset .button { margin-top: 16px; }
+.construction-calculator .field { min-width: 0; }
+.construction-calculator input[type="checkbox"] { width: auto; margin-right: 8px; }
+@media print { .interactive-area:has(.construction-calculator) > .field { display: none !important; } }

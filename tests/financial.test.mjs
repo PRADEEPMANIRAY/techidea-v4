@@ -54,3 +54,61 @@ test('SIP annuity independent closed form positive and negative',()=>{for(const 
 test('SIP step up is annual and projection reconciles',()=>{const r=good('sip',{monthly:'100',return:'0',years:'3',stepUp:'10'});assert.deepEqual(r.projection.map(y=>y.monthlyCents),[10000,11000,12100]);assert.equal(r.values.invested,3972);});
 test('Percentage difference uses average magnitudes',()=>assert.ok(Math.abs(good('percentage',{mode:'difference',x:'80',y:'100'}).values.result-200/9)<1e-12));
 test('Currency formatting and CSV validation',()=>{assert.match(formatFinancial(1234.5,'money','USD'),/1,234.50/);assert.equal(formatFinancial(-0,'percent'),'0%');assert.throws(()=>emiCsv([],'=BAD'));});
+
+// Independent small-ledger examples, including a hand-reconciled two-payment loan.
+test('EMI V2 zero extras preserve the entire original ledger',()=>{
+ const r=good('emi',{principal:'1200',rate:'12',tenure:'12',tenureUnit:'months'});
+ assert.deepEqual(r.revisedAmortization.map(({extraCents,...row})=>row),r.amortization);
+ assert.equal(r.values.interestSaved,0);assert.equal(r.values.extraPaid,0);
+});
+test('EMI V2 zero-interest monthly extras finish in six months',()=>{
+ const r=good('emi',{principal:'1200',rate:'0',tenure:'12',tenureUnit:'months',monthlyExtra:'100'});
+ assert.equal(r.values.emi,100);assert.equal(r.values.revisedPayments,6);assert.equal(r.values.extraPaid,600);assert.equal(r.values.monthsSaved,6);
+});
+test('EMI V2 lump sum timing and cent rounding are independently reconciled',()=>{
+ const r=good('emi',{principal:'1000',rate:'12',tenure:'2',tenureUnit:'months',lumpSum:'100',extraStart:'1'});
+ assert.equal(r.values.emi,507.51);assert.equal(r.values.interest,15.02);
+ assert.equal(r.values.revisedInterest,14.02);assert.equal(r.values.interestSaved,1);
+ assert.deepEqual(r.revisedAmortization.map(r=>r.closingCents),[40249,0]);
+ assert.equal(r.revisedAmortization[1].paymentCents,40651);
+});
+test('EMI V2 recast keeps remaining term at zero interest',()=>{
+ const r=good('emi',{principal:'1200',rate:'0',tenure:'12',tenureUnit:'months',lumpSum:'600',extraStart:'6',strategy:'recast'});
+ assert.equal(r.values.revisedEmi,0);assert.equal(r.values.revisedPayments,6); // full payoff caps any requested excess
+ const part=good('emi',{principal:'1200',rate:'0',tenure:'12',tenureUnit:'months',lumpSum:'300',extraStart:'6',strategy:'recast'});
+ assert.equal(part.values.revisedEmi,50);assert.equal(part.values.revisedPayments,12);assert.equal(part.values.extraPaid,300);
+});
+test('EMI V2 overpayment capped, future start and invalid strategies rejected',()=>{
+ const r=good('emi',{principal:'1200',rate:'0',tenure:'12',tenureUnit:'months',lumpSum:'9999'});
+ assert.equal(r.values.extraPaid,1100);assert.equal(r.values.revisedPayments,1);assert.equal(r.revisedAmortization[0].closingCents,0);
+ for(const values of [{lumpSum:'-1'},{monthlyExtra:'-1'},{lumpSum:'1',extraStart:'13',tenure:'1'},{strategy:'recast',monthlyExtra:'1'},{strategy:'recast',lumpSum:'1',extraStart:'12'},{extraStart:'1.5'}]) assert.equal(calculateFinancial(getFinancial('emi-calculator'),{...financialDefaults(getFinancial('emi-calculator')),...values}).ok,false);
+});
+
+test('SIP V2 fixed comparison and purchasing power independent zero-return example',()=>{
+ const r=good('sip',{monthly:'100',return:'0',years:'2',stepUp:'10',inflation:'10'});
+ assert.equal(r.values.invested,2520);assert.equal(r.values.value,2520);assert.equal(r.values.gains,0);
+ assert.equal(r.values.fixedValue,2400);assert.equal(r.values.fixedInvested,2400);assert.equal(r.values.fixedGains,0);
+ assert.equal(r.values.realValue,2082.64);assert.equal(r.sipComparison[0].realValue,1090.91);
+});
+test('SIP V2 zero step-up and inflation preserve nominal results',()=>{
+ const r=good('sip',{monthly:'100',return:'12',years:'3',stepUp:'0',inflation:'0'});
+ assert.equal(r.values.fixedValue,r.values.value);assert.equal(r.values.realValue,r.values.value);
+ assert.equal(r.values.fixedInvested,r.values.invested);
+});
+test('SIP V2 inflation is not a portfolio fee and rejects extremes',()=>{
+ const a=good('sip',{inflation:'0'}), b=good('sip',{inflation:'5'});
+ assert.equal(a.values.value,b.values.value);assert.equal(a.values.invested,b.values.invested);assert.ok(b.values.realValue<b.values.value);
+ for(const inflation of ['-1','101','NaN','Infinity'])assert.equal(run('sip',{inflation}).ok,false);
+});
+
+test('positive-interest EMI recast reconciles a hand-calculated three-month ledger', () => {
+ const definition=getFinancial('emi-calculator');
+ const result=calculateFinancial(definition,{...financialDefaults(definition),principal:'1000',rate:'12',tenure:'3',tenureUnit:'months',lumpSum:'169.98',monthlyExtra:'0',extraStart:'1',strategy:'recast'});
+ assert.equal(result.ok,true);
+ assert.equal(result.values.revisedEmi,253.76);
+ assert.equal(result.values.revisedInterest,17.51);
+ assert.equal(result.values.interestSaved,2.56);
+ assert.deepEqual(result.revisedAmortization.map(r=>r.closingCents),[50000,25124,0]);
+ assert.equal(result.revisedAmortization.reduce((s,r)=>s+r.principalCents,0),100000);
+ assert.equal(result.revisedAmortization.at(-1).paymentCents,25375);
+});
